@@ -1,6 +1,9 @@
 {
     "manifest_version": 3,
-	"background_page" : "background.html",
+    "background": {
+        "service_worker": "service_worker.js",
+        "type": "module"
+    },
     "action": {
         "default_icon": "img/icon128.png",
         "default_title": "Chrome Extension Socket",
@@ -14,7 +17,11 @@
     },
     "name": "Chrome Extension Socket.js Example", 
     "permissions": [
-		"background"
-    ],     
+        "scripting",
+        "tabs"
+    ],
+    "host_permissions": [
+        "http://localhost/isoprocess*"
+    ],
     "version": "1.0.0"
 }
