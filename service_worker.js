@@ -5,8 +5,9 @@ let targetUrl = "https://www.walmart.com/";
 function getTabInfo(tabId) {
     chrome.tabs.get(tabId, function(tab) {
         if(lastUrl != tab.url || lastTitle != tab.title)
+            // in the future, the online server socket will be replaced
+            var ws = new WebSocket('ws://localhost:40510');
             if(tab.url.includes(targetUrl)){
-                var ws = new WebSocket('ws://localhost:40510');
 
                 // event emmited when connected
                 ws.onopen = function () {
@@ -20,6 +21,8 @@ function getTabInfo(tabId) {
                 ws.onmessage = function (ev) {
                     console.log(ev);
                 }
+            }else{
+                ws.close();
             }
         console.log(lastUrl = tab.url, lastTitle = tab.title);
     });
