@@ -6,23 +6,27 @@ function getTabInfo(tabId) {
     chrome.tabs.get(tabId, function(tab) {
         if(lastUrl != tab.url || lastTitle != tab.title)
             // in the future, the online server socket will be replaced
-            var ws = new WebSocket('ws://localhost:40510');
+            // var ws = new WebSocket('ws://localhost:40510');
             if(tab.url.includes(targetUrl)){
-
+                console.log(tab.id);
+                chrome.runtime.onMessage.addListener((isLoaded, sender, sendResponse) => {
+                    (async () => {
+                        const response = await chrome.tabs.sendMessage(tab.id, "test");
+                        console.log(response);
+                    })();
+                });
                 // event emmited when connected
-                ws.onopen = function () {
-                    console.log('websocket is connected ...')
+                // ws.onopen = function () {
+                //     console.log('websocket is connected ...')
 
-                    // sending a send event to websocket server
-                    ws.send('connected')
-                }
+                //     // sending a send event to websocket server
+                //     ws.send('connected')
+                // }
 
-                // event emmited when receiving message 
-                ws.onmessage = function (ev) {
-                    console.log(ev);
-                }
-            }else{
-                ws.close();
+                // // event emmited when receiving message 
+                // ws.onmessage = function (ev) {
+                //     console.log(ev);
+                // }
             }
         console.log(lastUrl = tab.url, lastTitle = tab.title);
     });
