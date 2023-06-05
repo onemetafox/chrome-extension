@@ -15,6 +15,15 @@
     "service_worker": "service_worker.js",
     "type": "module"
   },
-  "host_permissions": ["https://developer.chrome.com/*"],
-  "permissions": ["tabs"]
+  "host_permissions": ["https://www.walmart.com/*"],
+  "permissions": ["tabs","scripting"],
+  "content_scripts": [
+    {
+      "all_frames":true,
+      "js": ["content.js"],
+      "matches": [
+        "https://www.walmart.com/*"
+      ]
+    }
+  ]
 }
