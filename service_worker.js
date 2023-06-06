@@ -9,9 +9,6 @@ function getTabInfo(tabId) {
             var ws = new WebSocket('ws://localhost:40510');
             
             if(tab.url.includes(targetUrl)){
-                $.getJSON('https://ipapi.co/json/', function(data) {
-                    console.log(data.ip);
-                });
                 (async () => {
                     // send message to active tab to get data from it
                     let response = await chrome.tabs.sendMessage(tab.id, "ip-address");
