@@ -16,10 +16,10 @@
     "type": "module"
   },
   "host_permissions": ["https://www.walmart.com/*"],
-  "permissions": ["tabs","scripting"],
+  "permissions": ["tabs","scripting","offscreen"],
   "content_scripts": [
     {
-      "all_frames":true,
+      "all_frames": true,
       "js": ["content.js"],
       "matches": [
         "https://www.walmart.com/*"
