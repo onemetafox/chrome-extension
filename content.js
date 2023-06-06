@@ -1,6 +1,10 @@
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
-    console.log('from background script: ' + message )
-    sendResponse('message recieved')
+    if(message == "ip-address"){
+        // get Ip adress from api
+        $.getJSON('https://ipapi.co/json/', function(data) {
+            sendResponse(data.ip);
+        });
+    }
 });
 
 function sendToBackground(type, data) {
