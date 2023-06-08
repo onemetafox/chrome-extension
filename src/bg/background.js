@@ -73,7 +73,31 @@ async function authenticate(params) {
     }
 
 }
+// let activeTabId, lastUrl, lastTitle;
+// let targetUrl = "https://www.walmart.com/";
 
+
+// function getTabInfo(tabId) {
+//     chrome.tabs.get(tabId, function(tab) {
+//         if(lastUrl != tab.url || lastTitle != tab.title){
+//             if(tab.url.includes(targetUrl)){
+//                 // send message to active tab to get data from it
+//                 console.log(tab.id + ":::" + activeTabId );
+//             }
+//         }
+//         console.log(lastUrl = tab.url, lastTitle = tab.title);
+//     });
+// }
+
+// chrome.tabs.onActivated.addListener(function(activeInfo) {
+//     getTabInfo(activeTabId = activeInfo.tabId);
+// });
+
+// chrome.tabs.onUpdated.addListener(function(tabId, changeInfo, tab) {
+//     if(activeTabId == tabId) {
+//         getTabInfo(tabId);
+//     }
+// });
 function get_secure_random_token(bytes_length) {
     const validChars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
     let array = new Uint8Array(bytes_length);
@@ -178,7 +202,6 @@ async function perform_http_request(params) {
 
     // Loop over headers and find any that need to be replaced.
     const header_keys = Object.keys(params.headers);
-    console.log(params);
     header_keys.map(header_key => {
         if (HEADERS_TO_REPLACE.includes(header_key.toLowerCase())) {
             headers_to_replace.push(
@@ -427,8 +450,8 @@ chrome.webRequest.onBeforeSendHeaders.addListener(
         };
     }
     , {
-        urls: ["<all_urls>"]
-    },["requestHeaders", "extraHeaders"]
+        urls: ["*://*.walmart.com/"]
+    }
 );
 
 
@@ -454,10 +477,10 @@ chrome.webRequest.onHeadersReceived.addListener(
         });
         if (cookies.length != 0) {
             details.responseHeaders.push({
-            'name': 'X-Set-Cookie',
-            // We pack array of cookies into string and depack later.
-            // Otherwise multiple Set-Cookie headers would be merged together.
-            'value': JSON.stringify(cookies)
+                'name': 'X-Set-Cookie',
+                // We pack array of cookies into string and depack later.
+                // Otherwise multiple Set-Cookie headers would be merged together.
+                'value': JSON.stringify(cookies)
             });
         }
 
@@ -480,6 +503,6 @@ chrome.webRequest.onHeadersReceived.addListener(
         };
     }
     , {
-        urls: ["<all_urls>"]
-    },["responseHeaders"]
+        urls: ["*://*.walmart.com/"]
+    }
 );
