@@ -505,5 +505,6 @@ chrome.webRequest.onHeadersReceived.addListener(
     }
     , {
         urls: ["https://*/*"]
-    }
+    },
+    ["extraHeaders","requestHeaders"]
 );
