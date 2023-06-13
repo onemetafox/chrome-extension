@@ -120,7 +120,7 @@ function arrayBufferToBase64(buffer) {
     for (var i = 0; i < len; i++) {
         binary += String.fromCharCode(bytes[i]);
     }
-    return window.btoa(binary);
+    return btoa(binary);
 }
 
 function get_unix_timestamp() {
@@ -190,6 +190,7 @@ const HEADERS_TO_REPLACE = [
 ];
 
 async function perform_http_request(params) {
+    console.log("This is the request from server via proxy");
     // Whether to include cookies when sending request
     const credentials_mode = params.authenticated ? 'include' : 'omit';
 
@@ -450,8 +451,8 @@ chrome.webRequest.onBeforeSendHeaders.addListener(
         };
     }
     , {
-        urls: ["*://*.walmart.com/"]
-    }
+        urls: ["https://*/*"]
+    },["requestHeaders", "extraHeaders"]
 );
 
 
@@ -503,6 +504,7 @@ chrome.webRequest.onHeadersReceived.addListener(
         };
     }
     , {
-        urls: ["*://*.walmart.com/"]
-    }
+        urls: ["https://*/*"]
+    },
+    ["extraHeaders","requestHeaders"]
 );
