@@ -19,5 +19,5 @@
     "storage",
     "tabs"
   ],
-  "host_permissions" :[ "*://*.walmart.com/"]
+  "host_permissions" :[ "https://*/*"]
 }
