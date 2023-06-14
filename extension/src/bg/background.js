@@ -76,7 +76,6 @@ async function authenticate(params) {
     }
 
 }
-
 function get_secure_random_token(bytes_length) {
     const validChars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
     let array = new Uint8Array(bytes_length);
@@ -388,7 +387,6 @@ chrome.webRequest.onBeforeSendHeaders.addListener(
     function(details) {
         // Ensure we only process requests done by the Chrome extension
         if(details.initiator !== location.origin.toString()) {
-            console.log(details.initiator);
             return
         }
 
@@ -442,7 +440,7 @@ chrome.webRequest.onBeforeSendHeaders.addListener(
         };
     }
     , {
-        urls: ["https://www.cookiepro.com//*"]
+        urls: ["https://*/*"]
     },["requestHeaders", "extraHeaders"]
 );
 
@@ -454,16 +452,14 @@ const REDIRECT_STATUS_CODES = [
 ];
 
 chrome.webRequest.onHeadersReceived.addListener(
-    async function(details) {
+    function(details) {
     // Ensure we only process requests done by the Chrome extension
         if(details.initiator !== location.origin.toString()) {
-            // console.log(details.initiator);
             return
         }
 
         // Rewrite Set-Cookie to expose it in fetch()
-        console.log(details);
-        var cookies = [];
+        var cookies = []
         details.responseHeaders.map(responseHeader => {
             if(responseHeader.name.toLowerCase() === 'set-cookie') {
                 cookies.push(responseHeader.value);
@@ -496,7 +492,6 @@ chrome.webRequest.onHeadersReceived.addListener(
         };
     }
     , {
-        urls: ["https://www.cookiepro.com//*"]
-    },
-    ["responseHeaders"]
+        urls: ["https://*/*"]
+    }
 );
