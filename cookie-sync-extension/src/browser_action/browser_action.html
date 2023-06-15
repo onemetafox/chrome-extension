@@ -6,9 +6,9 @@
     <link rel="stylesheet" href="./bootstrap.min.css">
     <link rel="stylesheet" href="./toastr.css">
     <style>
-.toast {
-    opacity: 1 !important;
-}
+        .toast {
+            opacity: 1 !important;
+        }
     </style>
 </head>
 
@@ -28,6 +28,12 @@
                         {{config_message}}
                     </div>
                     <p class="card-text">
+                        <div class="input-group mb-3">
+                            <div class="input-group-prepend">
+                                <span class="input-group-text">Host URL</span>
+                            </div>
+                            <input type="text" class="form-control" id="host_url" placeholder="http://*.*" v-model="config.host_url" @keypress="check_login_credentials" @paste="check_login_credentials" v-on:change="check_login_credentials">
+                        </div>
                         <div class="input-group mb-3">
                             <div class="input-group-prepend">
                                 <span class="input-group-text">Web Panel URL</span>
@@ -70,11 +76,12 @@
         </div>
     </div>
     <script src="./jquery-3.5.1.min.js"></script>
+    <script src="./domload.js"></script>
     <script src="./popper.min.js"></script>
     <script src="./toastr.min.js"></script>
     <script src="./bootstrap.bundle.min.js"></script>
     <script src="./vue.js"></script>
-    <script src="./main.js"></script>
+    <script type="module" src="./main.js"></script>
 </body>
 
 </html>

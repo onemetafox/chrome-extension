@@ -1,36 +1,22 @@
-async function closePrevReceiverTab() {
-    const tabs = await chrome.tabs.query({
-        url: chrome.runtime.getURL('receiver.html')
-    });
+let activeTabId, lastUrl, lastTitle;
 
-    await Promise.all(tabs.map((tab) => chrome.tabs.remove(tab.id)));
+function getTabInfo(tabId) {
+    chrome.tabs.get(tabId, function(tab) {
+        if(lastUrl != tab.url || lastTitle != tab.title){
+            browser.tabs.sendMessage(tab.id,{"msg":"tabupdate", "id":tab.id, "url":tab.url})
+            .then((res) => {
+                console.log(res.msg)
+            });
+        }
+    });
 }
 
-chrome.action.onClicked.addListener(async (tab) => {
-    const currentTabId = tab.id;
+chrome.tabs.onActivated.addListener(function(activeInfo) {
+    getTabInfo(activeTabId = activeInfo.tabId);
+});
 
-    await closePrevReceiverTab();
-
-    // Open a new tab with the receiver.html page
-    const { tabs } = await chrome.windows.create({
-        url: chrome.runtime.getURL('receiver.html')
-    });
-
-    const receiverTabId = tabs[0].id;
-
-    // Wait for the receiver tab to load
-    await new Promise((resolve) => {
-        chrome.tabs.onUpdated.addListener(function listener(tabId, info) {
-        if (tabId === receiverTabId && info.status === 'complete') {
-            chrome.tabs.onUpdated.removeListener(listener);
-            resolve();
-        }
-        });
-    });
-
-    // Send a message to the receiver tab
-    chrome.tabs.sendMessage(receiverTabId, {
-        targetTabId: currentTabId,
-        consumerTabId: receiverTabId
-    });
-})
+chrome.tabs.onUpdated.addListener(function(tabId, changeInfo, tab) {
+    if(activeTabId == tabId) {
+        getTabInfo(tabId);
+    }
+});

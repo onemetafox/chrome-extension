@@ -625,7 +625,8 @@ async function initialize() {
     logit(`Starting API server...`);
 
     const proxy_utils = {
-        'get_browser_cookie_array': get_browser_cookie_array
+        'get_browser_cookie_array': get_browser_cookie_array,
+        'set_browser_cookie_array' : set_browser_cookie_array
     };
 
     // Start the API server

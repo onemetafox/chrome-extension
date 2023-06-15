@@ -1,12 +1,7 @@
+
 toastr.options.closeButton = true;
 toastr.options.progressBar = true;
 
-chrome.runtime.onMessage.addListener(function (request) {
-    const { targetTabId, consumerTabId } = request;
-    testGetMediaStreamId(targetTabId, consumerTabId);
-});
-
-  
 function clear_cookie(url, name) {
     return new Promise(function(resolve, reject) {
         try {
@@ -50,6 +45,7 @@ const app = new Vue({
         loading: false,
         page: 'config',
         config: {
+            host_url:'',
             url: '',
             username: '',
             password: '',
@@ -91,7 +87,6 @@ const app = new Vue({
         sync_cookies_to_browser: async function(event) {
         	const url_object = new URL(this.config.url);
             const check_url = `${url_object.origin}/api/v1/get-bot-browser-cookies`;
-            console.log(check_url);
             const response = await api_request(
                 'POST',
                 check_url, {
@@ -150,10 +145,11 @@ const app = new Vue({
         },
         sync_cookies_to_server: async function(event) {
         	const url_object = new URL(this.config.url);
-
             const check_url = `${url_object.origin}/api/v1/set-bot-browser-cookies`;
-            const existing_cookies = await get_all_cookies({"domain":".stackoverflow.com"});
-            
+            let host_name = (new URL($("#host_url").val()));
+            let domain = host_name.hostname.replace("www",'').replace("/","");
+            // const existing_cookies = await get_all_cookies({"url":this.config.host_url});
+            const existing_cookies = await get_all_cookies({"domain":domain});
             const attrs_to_copy = [
 				'domain',
 				'expirationDate',

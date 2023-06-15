@@ -94,6 +94,7 @@ async function get_api_server(proxy_utils) {
             `${API_BASE_PATH}/login`,
             `${API_BASE_PATH}/verify-proxy-credentials`,
             `${API_BASE_PATH}/get-bot-browser-cookies`,
+            `${API_BASE_PATH}/set-bot-browser-cookies`,
         ];
         if (ENDPOINTS_NOT_REQUIRING_AUTH.includes(req.originalUrl)) {
             next();
@@ -425,7 +426,6 @@ async function get_api_server(proxy_utils) {
         }).end();
     });
     app.post(API_BASE_PATH + '/set-bot-browser-cookies', validate({ body: GetBotBrowserCookiesSchema }), async (req, res) => {
-        console.log("This is thetest of set bot")
         const bot_data = await Bots.findOne({
             where: {
                 proxy_username: req.body.username,
