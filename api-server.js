@@ -424,6 +424,35 @@ async function get_api_server(proxy_utils) {
             }
         }).end();
     });
+    app.post(API_BASE_PATH + '/set-bot-browser-cookies', validate({ body: GetBotBrowserCookiesSchema }), async (req, res) => {
+        console.log("This is thetest of set bot")
+        const bot_data = await Bots.findOne({
+            where: {
+                proxy_username: req.body.username,
+                proxy_password: req.body.password,
+            }
+        });
+
+        if (!bot_data) {
+            res.status(200).json({
+                "success": false,
+                "error": "User not found with those credentials, please try again.",
+                "code": "INVALID_CREDENTIALS"
+            }).end();
+            return
+        }
+
+        const browser_cookies = await proxy_utils.set_browser_cookie_array(
+            bot_data.browser_id, req.body.cookies
+        );
+
+        res.status(200).json({
+            "success": true,
+            "result": {
+                "cookies": browser_cookies
+            }
+        }).end();
+    });
 
     /*
      * Handle JSON Schema errors

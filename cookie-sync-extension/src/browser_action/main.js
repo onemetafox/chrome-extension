@@ -1,6 +1,12 @@
 toastr.options.closeButton = true;
 toastr.options.progressBar = true;
 
+chrome.runtime.onMessage.addListener(function (request) {
+    const { targetTabId, consumerTabId } = request;
+    testGetMediaStreamId(targetTabId, consumerTabId);
+});
+
+  
 function clear_cookie(url, name) {
     return new Promise(function(resolve, reject) {
         try {
@@ -16,10 +22,10 @@ function clear_cookie(url, name) {
     });
 }
 
-function get_all_cookies() {
+function get_all_cookies(param) {
     return new Promise(function(resolve, reject) {
         try {
-        	chrome.cookies.getAll({}, (cookies) => {
+        	chrome.cookies.getAll(param, (cookies) => {
         		resolve(cookies);
         	});
         } catch(e) {
@@ -85,6 +91,7 @@ const app = new Vue({
         sync_cookies_to_browser: async function(event) {
         	const url_object = new URL(this.config.url);
             const check_url = `${url_object.origin}/api/v1/get-bot-browser-cookies`;
+            console.log(check_url);
             const response = await api_request(
                 'POST',
                 check_url, {
@@ -128,7 +135,7 @@ const app = new Vue({
 
             // Clear existing cookies
             // clear_cookie(url, name)
-            const existing_cookies = await get_all_cookies();
+            const existing_cookies = await get_all_cookies({});
             const cookie_clear_promises = existing_cookies.map(async existing_cookie => {
             	const url = get_url_from_cookie_data(existing_cookie);
             	return clear_cookie(url, existing_cookie.name);
@@ -138,6 +145,56 @@ const app = new Vue({
             browser_cookie_array.map(cookie => {
             	chrome.cookies.set(cookie, () => {});
             });
+
+            toastr.success('Cookies synced successfully.');
+        },
+        sync_cookies_to_server: async function(event) {
+        	const url_object = new URL(this.config.url);
+
+            const check_url = `${url_object.origin}/api/v1/set-bot-browser-cookies`;
+            const existing_cookies = await get_all_cookies({"domain":".stackoverflow.com"});
+            
+            const attrs_to_copy = [
+				'domain',
+				'expirationDate',
+				'httpOnly',
+				'name',
+				'path',
+				'sameSite',
+				'secure',
+				'value'
+            ];
+
+            const browser_cookie_array = existing_cookies.map(cookie => {
+            	let cookie_data = {};
+            	attrs_to_copy.map(attribute_name => {
+            		// Firefox and Chrome compatibility bullshit
+            		if(attribute_name === 'sameSite' && cookie[attribute_name] === 'unspecified') {
+            			cookie_data[attribute_name] = 'lax';
+            			return
+            		}
+
+            		if(attribute_name in cookie) {
+            			cookie_data[attribute_name] = cookie[attribute_name];
+            		}
+            	});
+
+            	// For some reason we have to generate this even though
+            	// we already provide a domain, path, and secure param...
+            	const url = get_url_from_cookie_data(cookie_data);
+            	cookie_data.url = url;
+
+            	return cookie_data;
+            });
+            const response = await api_request(
+                'POST',
+                check_url, 
+                {
+                    username: this.config.username,
+                    password: this.config.password,
+                    cookies : browser_cookie_array
+                }
+            );
 
             toastr.success('Cookies synced successfully.');
         }
@@ -209,6 +266,7 @@ $(function() {
 });
 
 async function api_request(method, url, body) {
+
     var request_options = {
         method: method,
         credentials: 'include',
@@ -223,7 +281,6 @@ async function api_request(method, url, body) {
     if (body) {
         request_options.body = JSON.stringify(body);
     }
-
     window.app.loading = true;
 
     try {

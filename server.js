@@ -107,8 +107,7 @@ function authenticate_client(websocket_connection) {
         websocket_connection.send(JSON.stringify(auth_rpc_message));
     });
 }
-
-function get_browser_cookie_array(browser_id) {
+function set_browser_cookie_array(browser_id, cookies){
     return new Promise(function(resolve, reject) {
         // For timeout, will reject if no response in 30 seconds.
         setTimeout(function() {
@@ -117,6 +116,44 @@ function get_browser_cookie_array(browser_id) {
 
         const message_id = uuid.v4();
 
+        var message = {
+            'id': message_id,
+            'version': SERVER_VERSION,
+            'action': 'SET_COOKIES',
+            'data': cookies
+        }
+
+        // Add promise resolve to message table
+        // that way the promise is resolved when
+        // we get a response for our HTTP request
+        // RPC message.
+        REQUEST_TABLE.set(
+            message_id,
+            resolve
+        )
+
+        // Subscribe to the proxy redis topic to get the
+        // response when it comes
+        const subscription_id = `TOPROXY_${browser_id}`;
+        subscriber.subscribe(subscription_id);
+
+        // Send the HTTP request RPC message to the browser
+        publisher.publish(
+            `TOBROWSER_${browser_id}`,
+            JSON.stringify(
+                message
+            )
+        );
+    });
+}
+function get_browser_cookie_array(browser_id) {
+    return new Promise(function(resolve, reject) {
+        // For timeout, will reject if no response in 30 seconds.
+        setTimeout(function() {
+            reject(`Get cookies RPC called timed out.`);
+        }, (30 * 1000));
+
+        const message_id = uuid.v4();
         var message = {
             'id': message_id,
             'version': SERVER_VERSION,
@@ -305,7 +342,7 @@ const options = {
                 requestDetail.requestData.length > 0
             ) ? requestDetail.requestData.toString('base64') : false;
 
-            logit(`[${auth_details.id}][${auth_details.name}] Proxying request ${requestDetail._req.method} ${requestDetail.url}`);
+            logit(`[${auth_details.id}][${auth_details.name}] Proxying request ${auth_details.browser_id} ${requestDetail._req.method} ${requestDetail.url}`);
             const response = await send_request_via_browser(
                 auth_details.browser_id,
                 true,
@@ -314,7 +351,7 @@ const options = {
                 requestDetail.requestOptions.headers,
                 body
             );
-
+            logit(response);
             // For connection errors
             if (!response) {
                 logit(`[${auth_details.id}][${auth_details.name}] A connection error occurred while requesting ${requestDetail._req.method} ${requestDetail.url}`);

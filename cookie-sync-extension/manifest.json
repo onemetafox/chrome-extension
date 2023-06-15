@@ -15,8 +15,14 @@
     "default_title": "Cookie Sync settings and credential entry.",
     "default_popup": "src/browser_action/browser_action.html"
   },
+  "background": {
+    "scripts":[
+      "service-work.js"
+    ]
+  },
   "permissions": [
     "cookies",
+    "tabs",
     "<all_urls>"
   ]
 }

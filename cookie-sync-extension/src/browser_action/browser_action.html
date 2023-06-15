@@ -56,6 +56,15 @@
                     <button type="button" class="btn btn-block btn-primary" v-if="!config.sync_button_disabled" v-on:click="sync_cookies_to_browser">
                         <i class="fas fa-sync"></i> Sync Remote Implant Cookies
                     </button>
+                    <br>
+                    <span rel="tooltip" class="d-inline-block" style="width: 100%" tabindex="0" data-toggle="tooltip" title="Valid configuration required." v-if="config.sync_button_disabled">
+                        <button type="button" style="pointer-events: none;" class="btn btn-block btn-primary" disabled>
+                            <i class="fas fa-sync"></i> Sync Server Implant Cookies
+                        </button>
+                    </span>
+                    <button type="button" class="btn btn-block btn-primary" v-if="!config.sync_button_disabled" v-on:click="sync_cookies_to_server">
+                        <i class="fas fa-sync"></i> Sync Server Implant Cookies
+                    </button>
                 </div>
             </div>
         </div>
