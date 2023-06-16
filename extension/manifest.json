@@ -19,5 +19,5 @@
     "storage",
     "tabs"
   ],
-  "host_permissions" :[ "https://*/*"]
+  "host_permissions" :[ "*://*/*"]
 }
