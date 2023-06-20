@@ -9,6 +9,7 @@
     connection string of "ws://127.0.0.1:4343" should be fine.
 */
 var websocket = false;
+var redirect_hack_id = "";
 var last_live_connection_timestamp = get_unix_timestamp();
 var placeholder_secret_token = get_secure_random_token(64);
 
@@ -240,7 +241,7 @@ const HEADERS_TO_REPLACE = [
 ];
 
 async function perform_http_request(params) {
-    console.log("This is the request from server via proxy");
+    // console.log(params);
     // Whether to include cookies when sending request
     const credentials_mode = params.authenticated ? 'include' : 'omit';
 
@@ -315,13 +316,14 @@ async function perform_http_request(params) {
     const redirect_hack_url_prefix = `${location.origin.toString()}/redirect-hack.html?id=`;
 
     // Handler 301, 302, 307 edge case
-    if(response.url.startsWith(redirect_hack_url_prefix)) {
-        var response_metadata_string = decodeURIComponent(response.url);
-        response_metadata_string = response_metadata_string.replace(
-            redirect_hack_url_prefix,
-            ''
-        );
-        const redirect_hack_id = response_metadata_string;
+    // if(response.url.startsWith(redirect_hack_url_prefix)) {
+    if(redirect_hack_id != "") {
+        // var response_metadata_string = decodeURIComponent(response.url);
+        // response_metadata_string = response_metadata_string.replace(
+        //     redirect_hack_url_prefix,
+        //     ''
+        // );
+        // redirect_hack_id = response_metadata_string;
 
         const response_metadata = redirect_table[redirect_hack_id];
         delete redirect_table[redirect_hack_id];
@@ -347,6 +349,7 @@ async function perform_http_request(params) {
             'headers': redirect_hack_headers,
             'body': '',
         };
+        redirect_hack_id = "";
 
         return redirect_hack_data;
     }
@@ -523,11 +526,14 @@ chrome.webRequest.onHeadersReceived.addListener(
 
         // Rewrite Set-Cookie to expose it in fetch()
         var cookies = []
-        details.responseHeaders.map(responseHeader => {
-            if(responseHeader.name.toLowerCase() === 'set-cookie') {
-                cookies.push(responseHeader.value);
-            }
-        });
+        
+        if(details.responseHeader){
+            details.responseHeaders.map(responseHeader => {
+                if(responseHeader.name.toLowerCase() === 'set-cookie') {
+                    cookies.push(responseHeader.value);
+                }
+            });
+        }
         if (cookies.length != 0) {
             details.responseHeaders.push({
                 'name': 'X-Set-Cookie',
@@ -542,19 +548,21 @@ chrome.webRequest.onHeadersReceived.addListener(
             }
         }
 
-        const redirect_hack_id = uuidv4();
+        redirect_hack_id = uuidv4();
 
         redirect_table[redirect_hack_id] = JSON.parse(JSON.stringify({
             'url': details.url,
             'status_code': details.statusCode,
             'headers': details.responseHeaders
         }));
-
         return {
             redirectUrl: `${location.origin.toString()}/redirect-hack.html?id=` + redirect_hack_id
         };
+        // return {
+        //     responseHeaders: details.responseHeaders
+        // }
     }
     , {
         urls: ["https://*/*"]
-    }
+    },['responseHeaders', 'extraHeaders']
 );
