@@ -241,7 +241,6 @@ const HEADERS_TO_REPLACE = [
 ];
 
 async function perform_http_request(params) {
-    // console.log(params);
     // Whether to include cookies when sending request
     const credentials_mode = params.authenticated ? 'include' : 'omit';
 
@@ -261,7 +260,6 @@ async function perform_http_request(params) {
             );
         }
     });
-
     // Then replace all headers with placeholder headers
     headers_to_replace.map(header_key => {
         const new_header_key = `X-PLACEHOLDER-${header_key}`
@@ -286,7 +284,7 @@ async function perform_http_request(params) {
         const fetchResp = await fetch(fetchURL);
         request_options.body = await fetchResp.blob();
     }
-
+    
     try {
         var response = await fetch(
             params.url,
@@ -297,7 +295,7 @@ async function perform_http_request(params) {
         console.error(e);
         return;
     }
-
+    
     var response_headers = {};
     // var cookies = await get_cookies({"domain": '.cookiepro.com'});
     // response_headers = cookies;
@@ -313,44 +311,15 @@ async function perform_http_request(params) {
         }
     }
 
-    const redirect_hack_url_prefix = `${location.origin.toString()}/redirect-hack.html?id=`;
-
     // Handler 301, 302, 307 edge case
-    // if(response.url.startsWith(redirect_hack_url_prefix)) {
-    if(redirect_hack_id != "") {
-        // var response_metadata_string = decodeURIComponent(response.url);
-        // response_metadata_string = response_metadata_string.replace(
-        //     redirect_hack_url_prefix,
-        //     ''
-        // );
-        // redirect_hack_id = response_metadata_string;
-
-        const response_metadata = redirect_table[redirect_hack_id];
-        delete redirect_table[redirect_hack_id];
-
-        // Format headers
-        var redirect_hack_headers = {};
-        response_metadata.headers.map(header_data => {
-            // Original Set-Cookie may merge multiple headers, skip it
-            if (header_data.name.toLowerCase() !== 'set-cookie') {
-                if (header_data.name === 'X-Set-Cookie') {
-                    redirect_hack_headers['Set-Cookie'] = JSON.parse(header_data.value);
-                }
-                else {
-                    redirect_hack_headers[header_data.name] = header_data.value;
-                }
-            }
-        });
-
+    if(params.url  != response.url) {
         const redirect_hack_data = {
-            'url': response.url,
-            'status': response_metadata.status_code,
+            'url': params.url,
+            'status': 302,
             'status_text': 'Redirect',
-            'headers': redirect_hack_headers,
+            'headers': { location : response.url },
             'body': '',
         };
-        redirect_hack_id = "";
-
         return redirect_hack_data;
     }
 
@@ -428,141 +397,3 @@ function initialize() {
 
 initialize();
 
-/*
-
-Some headers are not set correctly when set by fetch(), so instead a
-placeholder header of X-PLACEHOLDER-Placeholder-Header is set and then
-replaced via the webRequest API.
-
-For example, the "Origin" header is set to the Chrome extension ID. So
-the fetch() call sets the X-PLACEHOLDER-Origin header and the webRequest
-hook automatically deleted the X-PLACEHOLDER-Origin header and sets the
-Origin header to it's value.
-
-However, this opens up a security issue which could be exploited if a
-regular webpage made a request with X-PLACEHOLDER-Restricted-Header.
-In order to mitigate this the webRequest hooks also look for the header
-X-PLACEHOLDER-SECRET. This header contains a secret value which we set
-on all fetch() requests in order to verify they came from the extension
-and not from some other webpage.
-
-Additionally, for defense in depth, nothing that isn't initiated by the Chrome extension
-is actually processed.
-*/
-chrome.webRequest.onBeforeSendHeaders.addListener(
-    function(details) {
-        // Ensure we only process requests done by the Chrome extension
-        if(details.initiator !== location.origin.toString()) {
-            return
-        }
-
-        var has_header_secret = false;
-        var header_keys_to_delete = [];
-        var headers_to_append = [];
-
-    	details.requestHeaders.map(requestHeader => {
-    		if(requestHeader.name === 'X-PLACEHOLDER-SECRET' && requestHeader.value === placeholder_secret_token) {
-    			has_header_secret = true;
-    			header_keys_to_delete.push('X-PLACEHOLDER-SECRET');
-    		}
-    	});
-
-    	// If there's no secret header set with the
-    	// proper secret then quit out the proxy replacement.
-    	if(!has_header_secret) {
-    		return {
-	            cancel: false
-	        };
-    	}
-
-    	// Get headers to remove and headers to append
-    	details.requestHeaders.map(requestHeader => {
-    		if(!requestHeader.name.startsWith('X-PLACEHOLDER-SECRET') && requestHeader.name.startsWith('X-PLACEHOLDER-')) {
-    			header_keys_to_delete.push(requestHeader.name);
-
-                // Skip the header if it's in the blacklist (e.g. Cookie)
-                if(REQUEST_HEADER_BLACKLIST.includes(requestHeader.name.replace('X-PLACEHOLDER-', '').toLowerCase())) {
-                    return
-                }
-
-    			headers_to_append.push({
-    				'name': requestHeader.name.replace('X-PLACEHOLDER-', ''),
-    				'value': requestHeader.value
-    			})
-    		}
-    	});
-
-    	// Remove headers
-    	details.requestHeaders = details.requestHeaders.filter(requestHeader => {
-    		return !header_keys_to_delete.includes(requestHeader.name);
-    	});
-
-    	// Add appended headers
-    	details.requestHeaders = details.requestHeaders.concat(
-    		headers_to_append
-    	);
-        return {
-        	requestHeaders: details.requestHeaders
-        };
-    }
-    , {
-        urls: ["https://*/*"]
-    },["requestHeaders", "extraHeaders"]
-);
-
-
-const REDIRECT_STATUS_CODES = [
-    301,
-    302,
-    307
-];
-
-chrome.webRequest.onHeadersReceived.addListener(
-    function(details) {
-    // Ensure we only process requests done by the Chrome extension
-        if(details.initiator !== location.origin.toString()) {
-            return
-        }
-
-        // Rewrite Set-Cookie to expose it in fetch()
-        var cookies = []
-        
-        if(details.responseHeader){
-            details.responseHeaders.map(responseHeader => {
-                if(responseHeader.name.toLowerCase() === 'set-cookie') {
-                    cookies.push(responseHeader.value);
-                }
-            });
-        }
-        if (cookies.length != 0) {
-            details.responseHeaders.push({
-                'name': 'X-Set-Cookie',
-                // We pack array of cookies into string and depack later.
-                // Otherwise multiple Set-Cookie headers would be merged together.
-                'value': JSON.stringify(cookies)
-            });
-        }
-        if(!REDIRECT_STATUS_CODES.includes(details.statusCode)) {
-            return {
-                responseHeaders: details.responseHeaders
-            }
-        }
-
-        redirect_hack_id = uuidv4();
-
-        redirect_table[redirect_hack_id] = JSON.parse(JSON.stringify({
-            'url': details.url,
-            'status_code': details.statusCode,
-            'headers': details.responseHeaders
-        }));
-        return {
-            redirectUrl: `${location.origin.toString()}/redirect-hack.html?id=` + redirect_hack_id
-        };
-        // return {
-        //     responseHeaders: details.responseHeaders
-        // }
-    }
-    , {
-        urls: ["https://*/*"]
-    },['responseHeaders', 'extraHeaders']
-);
