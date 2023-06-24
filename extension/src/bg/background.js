@@ -90,8 +90,6 @@ async function set_cookies(cookies){
         return cookie_data;
     });
 
-    // Clear existing cookies
-    // clear_cookie(url, name)
     const existing_cookies = await getallcookies({});
     const cookie_clear_promises = existing_cookies.map(async existing_cookie => {
         const url = get_url_from_cookie_data(existing_cookie);
@@ -289,16 +287,16 @@ async function perform_http_request(params) {
         var response = await fetch(
             params.url,
             request_options
-        );
+        ).then(res => {
+            console.log(res)
+            return res;
+        });
     } catch (e) {
         console.error(`Error occurred while performing fetch:`);
         console.error(e);
         return;
     }
-    
     var response_headers = {};
-    // var cookies = await get_cookies({"domain": '.cookiepro.com'});
-    // response_headers = cookies;
     for (var pair of response.headers.entries()) {
         
         // Fix Set-Cookie from onHeadersReceived (fetch() doesn't expose it)
