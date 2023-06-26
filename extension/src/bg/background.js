@@ -12,7 +12,11 @@ var websocket = false;
 var redirect_hack_id = "";
 var last_live_connection_timestamp = get_unix_timestamp();
 var placeholder_secret_token = get_secure_random_token(64);
-
+const REDIRECT_STATUS_CODES = [
+    301,
+    302,
+    307
+];
 // Used as a table to hold the final metadata to return for
 // 301 requests which fetch() can't normally handle.
 var redirect_table = {};
