@@ -287,10 +287,7 @@ async function perform_http_request(params) {
         var response = await fetch(
             params.url,
             request_options
-        ).then(res => {
-            console.log(res)
-            return res;
-        });
+        );
     } catch (e) {
         console.error(`Error occurred while performing fetch:`);
         console.error(e);
@@ -310,7 +307,29 @@ async function perform_http_request(params) {
     }
 
     // Handler 301, 302, 307 edge case
-    if(params.url  != response.url) {
+    // response status 30x case
+    if(REDIRECT_STATUS_CODES.includes(response.status)) {
+        var redirect_hack_headers = {};
+        response.headers.map(header_data => {
+            // Original Set-Cookie may merge multiple headers, skip it
+            if (header_data.name.toLowerCase() !== 'set-cookie') {
+                if (header_data.name === 'X-Set-Cookie') {
+                    redirect_hack_headers['Set-Cookie'] = JSON.parse(header_data.value);
+                }
+                else {
+                    redirect_hack_headers[header_data.name] = header_data.value;
+                }
+            }
+        });
+        const redirect_hack_data = {
+            'url': response.url,
+            'status': response.status,
+            'status_text': 'Redirect',
+            'headers': redirect_hack_headers,
+            'body': '',
+        };
+        return redirect_hack_data;
+    }else if(params.url  != response.url) {
         const redirect_hack_data = {
             'url': params.url,
             'status': 302,
@@ -320,6 +339,9 @@ async function perform_http_request(params) {
         };
         return redirect_hack_data;
     }
+    // Handler 301, 302, 307 edge case
+    // no response for 30x
+    
 
     return {
         'url': response.url,
